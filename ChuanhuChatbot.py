@@ -309,7 +309,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                             )
                             logit_bias_txt = gr.Textbox(
                                 show_label=True,
-                                placeholder="word:likelihood",
+                                placeholder=f"word:likelihood",
                                 label="logit bias",
                                 value="",
                                 lines=1,
@@ -338,7 +338,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                     with gr.Tab(label=i18n("模型")):
                         keyTxt = gr.Textbox(
                             show_label=True,
-                            placeholder="Your API-key...",
+                            placeholder=f"Your API-key...",
                             value=hide_middle_chars(user_api_key.value),
                             type="password",
                             visible=not HIDE_MY_KEY,
