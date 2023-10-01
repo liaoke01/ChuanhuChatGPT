@@ -309,7 +309,7 @@ with gr.Blocks(theme=small_and_beautiful_theme) as demo:
                             )
                             logit_bias_txt = gr.Textbox(
                                 show_label=True,
-                                placeholder=f"word:likelihood",
+                                placeholder="word:likelihood",
                                 label="logit bias",
                                 value="",
                                 lines=1,
