@@ -144,13 +144,19 @@ class ModelType(Enum):
     LangchainChat = 10
     Midjourney = 11
     Spark = 12
+    OpenAIInstruct = 13
+    Claude = 14
+    Qwen = 15
 
     @classmethod
     def get_type(cls, model_name: str):
         model_type = None
         model_name_lower = model_name.lower()
         if "gpt" in model_name_lower:
-            model_type = ModelType.OpenAI
+            if "instruct" in model_name_lower:
+                model_type = ModelType.OpenAIInstruct
+            else:
+                model_type = ModelType.OpenAI
         elif "chatglm" in model_name_lower:
             model_type = ModelType.ChatGLM
         elif "llama" in model_name_lower or "alpaca" in model_name_lower:
@@ -175,6 +181,10 @@ class ModelType(Enum):
             model_type = ModelType.LangchainChat
         elif "星火大模型" in model_name_lower:
             model_type = ModelType.Spark
+        elif "claude" in model_name_lower:
+            model_type = ModelType.Claude
+        elif "qwen" in model_name_lower:
+            model_type = ModelType.Qwen
         else:
             model_type = ModelType.LLaMA
         return model_type
@@ -247,7 +257,7 @@ class BaseLLMModel:
 
     def billing_info(self):
         """get billing infomation, inplement if needed"""
-        logging.warning("billing info not implemented, using default")
+        # logging.warning("billing info not implemented, using default")
         return BILLING_NOT_APPLICABLE_MSG
 
     def count_token(self, user_input):
@@ -342,7 +352,7 @@ class BaseLLMModel:
             chatbot.append([i18n("上传了")+str(len(files))+"个文件", summary])
         return chatbot, status
 
-    def prepare_inputs(self, real_inputs, use_websearch, files, reply_language, chatbot):
+    def prepare_inputs(self, real_inputs, use_websearch, files, reply_language, chatbot, load_from_cache_if_possible=True):
         fake_inputs = None
         display_append = []
         limited_context = False
@@ -353,15 +363,18 @@ class BaseLLMModel:
             limited_context = True
             msg = "加载索引中……"
             logging.info(msg)
-            index = construct_index(self.api_key, file_src=files)
+            index = construct_index(self.api_key, file_src=files, load_from_cache_if_possible=load_from_cache_if_possible)
             assert index is not None, "获取索引失败"
             msg = "索引获取成功，生成回答中……"
             logging.info(msg)
             with retrieve_proxy():
                 retriever = VectorStoreRetriever(vectorstore=index, search_type="similarity_score_threshold", search_kwargs={
                                                  "k": 6, "score_threshold": 0.5})
-                relevant_documents = retriever.get_relevant_documents(
-                    real_inputs)
+                try:
+                    relevant_documents = retriever.get_relevant_documents(
+                        real_inputs)
+                except AssertionError:
+                    return self.prepare_inputs(real_inputs, use_websearch, files, reply_language, chatbot, load_from_cache_if_possible=False)
             reference_results = [[d.page_content.strip("�"), os.path.basename(
                 d.metadata["source"])] for d in relevant_documents]
             reference_results = add_source_numbers(reference_results)
@@ -627,14 +640,15 @@ class BaseLLMModel:
     def set_single_turn(self, new_single_turn):
         self.single_turn = new_single_turn
 
-    def reset(self):
+    def reset(self, remain_system_prompt=False):
         self.history = []
         self.all_token_counts = []
         self.interrupted = False
         self.history_file_path = new_auto_history_filename(self.user_identifier)
         history_name = self.history_file_path[:-5]
         choices = [history_name] + get_history_names(self.user_identifier)
-        return [], self.token_message([0]), gr.Radio.update(choices=choices, value=history_name), ""
+        system_prompt = self.system_prompt if remain_system_prompt else ""
+        return [], self.token_message([0]), gr.Radio.update(choices=choices, value=history_name), system_prompt
 
     def delete_first_conversation(self):
         if self.history:
@@ -645,14 +659,13 @@ class BaseLLMModel:
     def delete_last_conversation(self, chatbot):
         if len(chatbot) > 0 and STANDARD_ERROR_MSG in chatbot[-1][1]:
             msg = "由于包含报错信息，只删除chatbot记录"
-            chatbot.pop()
+            chatbot = chatbot[:-1]
             return chatbot, self.history
         if len(self.history) > 0:
-            self.history.pop()
-            self.history.pop()
+            self.history = self.history[:-2]
         if len(chatbot) > 0:
             msg = "删除了一组chatbot对话"
-            chatbot.pop()
+            chatbot = chatbot[:-1]
         if len(self.all_token_counts) > 0:
             msg = "删除了一组对话的token计数记录"
             self.all_token_counts.pop()
@@ -739,6 +752,10 @@ class BaseLLMModel:
                     logging.info(new_history)
             except:
                 pass
+            if len(json_s["chatbot"]) < len(json_s["history"]):
+                logging.info("Trimming corrupted history...")
+                json_s["history"] = json_s["history"][-len(json_s["chatbot"]):]
+                logging.info(f"Trimmed history: {json_s['history']}")
             logging.debug(f"{self.user_identifier} 加载对话历史完毕")
             self.history = json_s["history"]
             return os.path.basename(self.history_file_path), json_s["system"], json_s["chatbot"]

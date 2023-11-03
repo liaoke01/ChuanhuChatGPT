@@ -14,7 +14,9 @@ LLAMA_INFERENCER = None
 # ChatGPT 设置
 INITIAL_SYSTEM_PROMPT = "You are a helpful assistant."
 API_HOST = "api.openai.com"
-COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_API_BASE = "https://api.openai.com/v1"
+CHAT_COMPLETION_URL = "https://api.openai.com/v1/chat/completions"
+COMPLETION_URL = "https://api.openai.com/v1/completions"
 BALANCE_API_URL="https://api.openai.com/dashboard/billing/credit_grants"
 USAGE_API_URL="https://api.openai.com/dashboard/billing/usage"
 HISTORY_DIR = Path("history")
@@ -50,10 +52,11 @@ CHUANHU_DESCRIPTION = i18n("由Bilibili [土川虎虎虎](https://space.bilibili
 
 ONLINE_MODELS = [
     "gpt-3.5-turbo",
+    "gpt-3.5-turbo-instruct",
     "gpt-3.5-turbo-16k",
+    "gpt-4",
     "gpt-3.5-turbo-0301",
     "gpt-3.5-turbo-0613",
-    "gpt-4",
     "gpt-4-0314",
     "gpt-4-0613",
     "gpt-4-32k",
@@ -68,11 +71,12 @@ ONLINE_MODELS = [
     "yuanai-1.0-translate",
     "yuanai-1.0-dialog",
     "yuanai-1.0-rhythm_poems",
-    "minimax-abab4-chat",
     "minimax-abab5-chat",
     "midjourney",
+    "讯飞星火大模型V3.0",
     "讯飞星火大模型V2.0",
-    "讯飞星火大模型V1.5"
+    "讯飞星火大模型V1.5",
+    "Claude"
 ]
 
 LOCAL_MODELS = [
@@ -84,6 +88,8 @@ LOCAL_MODELS = [
     "StableLM",
     "MOSS",
     "Llama-2-7B-Chat",
+    "Qwen 7B",
+    "Qwen 14B"
 ]
 
 # Additional metadate for local models
@@ -95,6 +101,12 @@ MODEL_METADATA = {
     "Llama-2-7B-Chat":{
         "repo_id": "TheBloke/Llama-2-7b-Chat-GGUF",
         "filelist": ["llama-2-7b-chat.Q6_K.gguf"],
+    },
+    "Qwen 7B": {
+        "repo_id": "Qwen/Qwen-7B-Chat-Int4",
+    },
+    "Qwen 14B": {
+        "repo_id": "Qwen/Qwen-14B-Chat-Int4",
     }
 }
 
@@ -123,7 +135,8 @@ MODEL_TOKEN_LIMIT = {
     "gpt-4-0613": 8192,
     "gpt-4-32k": 32768,
     "gpt-4-32k-0314": 32768,
-    "gpt-4-32k-0613": 32768
+    "gpt-4-32k-0613": 32768,
+    "Claude": 4096
 }
 
 TOKEN_OFFSET = 1000 # 模型的token上限减去这个值，得到软上限。到达软上限之后，自动尝试减少token占用。
