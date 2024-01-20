@@ -29,6 +29,7 @@ function setUploader() {
             fileCountSpan.innerText = fileCount;
         } else {
             chatbotArea.classList.remove('with-file');
+            statusDisplayMessage("");
             fileCount = 0;
             transUpload();
         }
@@ -62,7 +63,7 @@ function setCheckboxes() {
     chatbotOnlineSearchCB = gradioApp().querySelector('input[name="online-search-cb"]');
     grSingleSessionCB = gradioApp().querySelector("#gr-single-session-cb > label > input");
     grOnlineSearchCB = gradioApp().querySelector("#gr-websearch-cb > label> input");
-
+    
     chatbotSingleSessionCB.addEventListener('change', (e) => {
         grSingleSessionCB.checked = chatbotSingleSessionCB.checked;
         gradioApp().querySelector('#change-single-session-btn').click();
@@ -88,6 +89,11 @@ function bgChangeOnlineSearch() {
     // const grOnlineSearchCB = gradioApp().querySelector("#gr-websearch-cb > label> input");
     let a = chatbotOnlineSearchCB.checked;
     return [a];
+}
+
+function updateCheckboxes() {
+    chatbotSingleSessionCB.checked = grSingleSessionCB.checked;
+    chatbotOnlineSearchCB.checked = grOnlineSearchCB.checked;
 }
 
 // UTILS
